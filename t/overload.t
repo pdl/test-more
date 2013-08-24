@@ -11,7 +11,7 @@ BEGIN {
 }
 
 use strict;
-use Test::More tests => 19;
+use Test::More tests => 33;
 
 
 package Overloaded;
@@ -83,4 +83,25 @@ Test::More->builder->is_eq ($obj, "foo");
     cmp_ok $obj, 'eq', '0',  'cmp_ok() eq';
     is $obj->{stringify}, 0, '  does not stringify';
     is $obj, '0',            'is() with string overloading';
+}
+
+# gh 385
+{
+    use Scalar::Util qw( dualvar );
+    sub _is_dualvar {Test::Builder::_is_dualvar(undef, $_[0])}
+    my $dualvar = dualvar(3,'5');
+    ok (!_is_dualvar(0));
+    ok (!_is_dualvar(1));
+    ok (!_is_dualvar('foo'));
+    ok (!_is_dualvar('10 green bottles'));
+    ok (!_is_dualvar('0 but true'));
+    ok (_is_dualvar($dualvar));
+    ok (_is_dualvar(dualvar(4,'foo')));
+    ok (_is_dualvar(dualvar(0,'foo')));
+    ok (_is_dualvar(dualvar(0,1)));
+    ok (_is_dualvar(dualvar(0,0)));
+    ok (_is_dualvar(dualvar(0,'0.0')));
+    cmp_ok $dualvar, 'eq', '5',  'dualvar cmp_ok() eq';
+    cmp_ok $dualvar, '==', 3,  'dualvar cmp_ok() ==';
+    is ($dualvar, '5', 'dualvar is string "5"');
 }
